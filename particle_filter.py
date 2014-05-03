@@ -14,6 +14,8 @@ import sys
 import trig
 import utils
 
+# Notice (Nabin): This assumes you have protobuf when in Windows. If that is
+# not the case modify it and make sure it does not break in Mac (darwin).
 if sys.platform != 'darwin':
   import proto.node_detection_pb2
   import proto.util
