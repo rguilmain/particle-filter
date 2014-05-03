@@ -12,9 +12,11 @@ import random
 import sys
 
 import trig
+import utils
 
-import proto.node_detection_pb2
-import proto.util
+if sys.platform != 'darwin':
+  import proto.node_detection_pb2
+  import proto.util
 
 
 class Particle(object):
@@ -53,9 +55,12 @@ class Particle(object):
       self._surface_range, self._hor_angle)
 
 
-def get_feature_datas(directory):
+def get_feature_datas(directory, data_format='proto'):
   for f in os.listdir(directory):
-    yield proto.util.read(filename=(directory + "/" + f))
+    if data_format == 'proto':
+      yield proto.util.read(filename=(directory + "/" + f))
+    else:
+      yield utils.Struct(json.loads(open(os.path.join(directory, f)).read()))
 
 
 def main(argv=None):
@@ -80,6 +85,10 @@ def main(argv=None):
   if not os.path.isdir(args.directory):
     sys.stdout.write("Could not find the {} directory!".format(args.directory))
     return
+    
+  # This assumes the input directory is of the form *-<data_format> where
+  # <data_format> is either 'proto' or 'json'.
+  data_format = args.directory.split('-')[-1]
 
   particles = []
   for i in range(args.num_particles):
@@ -89,11 +98,12 @@ def main(argv=None):
   last_heading = None
   last_lat = None
   last_lon = None
-  for feature_data in get_feature_datas(args.directory):
+  for feature_data in get_feature_datas(args.directory, data_format):
     # Cache the current sensor heading and position variables.
     curr_heading = feature_data.heading.heading
     curr_lat = feature_data.position.lat
     curr_lon = feature_data.position.lon
+    print curr_heading, curr_lat, curr_lon
 
     # If the sensor has moved, update the relative locations of the particles.
     # TODO(Rich): Pretty sure we want lat, lon, and heading noise instead of
