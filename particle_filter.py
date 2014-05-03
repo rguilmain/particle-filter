@@ -5,10 +5,12 @@
 """
 
 import argparse
+import json
 import math
 import os
 import random
 import sys
+
 import trig
 
 import proto.node_detection_pb2
@@ -47,8 +49,8 @@ class Particle(object):
     self._surface_range = math.sqrt((e2 - e1)**2 + (n2 - n1)**2)
 
   def __repr__(self):
-    return "[range={}, hor_angle={}, orientation={}]".format(
-      self._surface_range, self._hor_angle, self._orientation)
+    return "[range={}, hor_angle={}]".format(
+      self._surface_range, self._hor_angle)
 
 
 def get_feature_datas(directory):
