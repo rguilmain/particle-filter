@@ -17,12 +17,6 @@ import matplotlib.pyplot as plt
 import trig
 import utils
 
-# Notice (Nabin): This assumes you have protobuf when in Windows. If that is
-# not the case modify it and make sure it does not break in Mac (darwin).
-if sys.platform != 'darwin':
-  import proto.node_detection_pb2
-  import proto.util
-
 
 def get_particle_positions(particles):
   xs, ys = [], []
@@ -114,13 +108,16 @@ def get_feature_datas(directory, data_format):
 
   Valid data_format values are 'proto' and 'json'.
   """
-  for f in os.listdir(directory):
-    if data_format == 'proto':
+  if data_format == 'proto':
+    import proto.node_detection_pb2
+    import proto.util
+    for f in os.listdir(directory):
       yield proto.util.read(os.path.join(directory, f))
-    elif data_format == 'json':
+  elif data_format == 'json':
+    for f in os.listdir(directory):
       yield utils.Struct(json.loads(open(os.path.join(directory, f)).read()))
-    else:
-      raise NotImplementedError("Unknown data format {}.".format(data_format))
+  else:
+    raise NotImplementedError("Unknown data format {}.".format(data_format))
 
 
 def get_measurements(feature_data):
