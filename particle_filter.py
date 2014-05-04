@@ -164,8 +164,8 @@ def main(argv=None):
     sys.argv = argv
 
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("-d", "--directory", default="featuredatas-proto",
-                      help="feature data location (default featuredatas-proto)")
+  parser.add_argument("-d", "--directory", default="featuredatas-json",
+                      help="feature data location (default featuredatas-json)")
   parser.add_argument("-n", "--num-particles", type=int, default=1000,
                       help="number of particles to simulate (default 1000)")
   parser.add_argument("--gps-noise", type=float, default=10.0,
