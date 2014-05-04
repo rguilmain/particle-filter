@@ -21,25 +21,19 @@ if sys.platform != 'darwin':
   import proto.util
 
 
-class SensorPosition(object):
-
-  def __init__(self, lat, lon, heading):
-    self.lat = lat
-    self.lon = lon
-    self.heading = heading
-
-  def __repr__(self):
-    return "[lat={}, lon={}, heading={}]".format(
-      self.lat, self.lon, self.heading)
-
-
 class Particle(object):
 
-  def __init__(self, fov_range, fov_angle, gps_noise, compass_noise):
+  def __init__(self, fov_range, fov_angle, gps_noise, compass_noise,
+               range_resolution, angular_resolution):
+    # Initialize at a random location in the field of view.
     self.surface_range = random.random() * fov_range
     self.hor_angle = random.random() * fov_angle - fov_angle / 2
+
+    # Cache our movement and measurement noise variables.
     self.gps_noise = gps_noise
     self.compass_noise = compass_noise
+    self.range_resolution = range_resolution
+    self.angular_resolution = angular_resolution
 
   def move(self, last_position, curr_position):
     """Given sensor motion, move the relative location of the particle.
@@ -74,17 +68,87 @@ class Particle(object):
     self.hor_angle = curr_heading - predicted_target_bearing
     self.surface_range = math.sqrt((e2 - e1)**2 + (n2 - n1)**2)
 
-  def __repr__(self):
-    return "[range={}, hor_angle={}]".format(
-      self.surface_range, self.hor_angle)
+  def measurement_prob(self, measurement):
+    """Return how likely it is that this particle came from a measured target.
+    """
+    return (self._gaussian(measurement.surface_range, self.range_resolution,
+                           self.surface_range) *
+            self._gaussian(measurement.hor_angle, self.angular_resolution,
+                           self.hor_angle))
+
+  def _gaussian(self, mu, sigma, x):
+    """Return the probability of x for a 1D Gaussian.
+    """
+    return math.exp((-((mu - x)**2) / (sigma**2) / 2.0) /
+                    math.sqrt(2.0 * math.pi * (sigma**2)))
 
 
-def get_feature_datas(directory, data_format='proto'):
+class SensorPosition(object):
+
+  def __init__(self, lat, lon, heading):
+    self.lat = lat
+    self.lon = lon
+    self.heading = heading
+
+
+class Measurement(object):
+
+  def __init__(self, surface_range, hor_angle):
+    self.surface_range = surface_range
+    self.hor_angle = hor_angle
+
+
+def get_feature_datas(directory, data_format):
+  """Yield parsed feature data from the binary files in the given directory.
+
+  Valid data_format values are 'proto' and 'json'.
+  """
   for f in os.listdir(directory):
     if data_format == 'proto':
-      yield proto.util.read(filename=(directory + "/" + f))
-    else:
+      yield proto.util.read(os.path.join(directory, f))
+    elif data_format == 'json':
       yield utils.Struct(json.loads(open(os.path.join(directory, f)).read()))
+    else:
+      raise NotImplementedError("Unknown data format {}.".format(data_format))
+
+
+def get_measurements(feature_data):
+  """Return the locations of the detected targets in the feature data.
+  """
+  measurements = []
+  for cluster in feature_data.filtered_mobile_clusters:
+    measurements.append(
+      Measurement(cluster.centroid.range, cluster.centroid.hor_ang))
+  return measurements
+
+
+def get_weights(particles, measurements):
+  """Return a list of likelihood weights parallel to the particles list.
+  """
+  weights = []
+  for particle in particles:
+    weight = 0.0
+    for measurement in measurements:
+      weight = max(weight, particle.measurement_prob(measurement))
+    weights.append(weight)
+  return weights
+
+
+def resample_particles(old_particles, weights):
+  """Do a weighted resampling with replacement of our particles.
+  """
+  new_particles = []
+  num_particles = len(old_particles)
+  beta = 0.0
+  max_weight = max(weights)
+  index = int(random.random() * num_particles)
+  for i in range(num_particles):
+    beta += random.random() * 2.0 * max_weight
+    while beta > weights[index]:
+      beta -= weights[index]
+      index = (index + 1) % num_particles
+    new_particles.append(old_particles[index])
+  return new_particles
 
 
 def main(argv=None):
@@ -96,13 +160,17 @@ def main(argv=None):
                       help="feature data location (default featuredatas-proto)")
   parser.add_argument("-n", "--num-particles", type=int, default=1000,
                       help="number of particles to simulate (default 1000)")
-  parser.add_argument("--gps-noise", type=float, default=0.05,
-                      help="sensor lat and lon motion noise (default 0.05m)")
-  parser.add_argument("--compass-noise", type=float, default=1.5,
-                      help="sensor heading noise (default 1.5 degrees)")
-  parser.add_argument("-r", "--range", type=float, default=500.0,
+  parser.add_argument("--gps-noise", type=float, default=10.0,
+                      help="sensor lat and lon motion noise (default 10.0m)")
+  parser.add_argument("--compass-noise", type=float, default=1.0,
+                      help="sensor heading noise (default 1.0 degrees)")
+  parser.add_argument("--range-resolution", type=float, default=0.5,
+                      help="range resolution of the sensor (default 0.5m)")
+  parser.add_argument("--angular-resolution", type=float, default=1.5,
+                      help="angular sensor resolution (default 1.5 degrees)")
+  parser.add_argument("-r", "--fov-range", type=float, default=500.0,
                       help="range of the field of view (default 500.0m)")
-  parser.add_argument("-a", "--hor-angle", type=float, default=90.0,
+  parser.add_argument("-a", "--fov-hor-angle", type=float, default=90.0,
                       help="number of degrees in field of view (default 90.0)")
   args = parser.parse_args()
 
@@ -114,29 +182,25 @@ def main(argv=None):
   # <data_format> is either 'proto' or 'json'.
   data_format = args.directory.split('-')[-1]
 
+  # Initialize our particles.
   particles = []
   for i in range(args.num_particles):
-    particles.append(Particle(args.range, args.hor_angle, args.gps_noise,
-                              args.compass_noise))
+    particles.append(Particle(args.fov_range, args.fov_hor_angle,
+                              args.gps_noise, args.compass_noise,
+                              args.range_resolution, args.angular_resolution))
 
+  # Pump.
   last_position = None
   for feature_data in get_feature_datas(args.directory, data_format):
-    # Cache the current sensor heading and position variables.
     current_position = SensorPosition(feature_data.position.lat,
                                       feature_data.position.lon,
                                       feature_data.heading.heading)
-
-    # If the sensor has moved, update the relative locations of the particles.
     if last_position is not None:
       for particle in particles:
         particle.move(last_position, current_position)
-
-    # TODO(Rich): Measurement step.
-    for cluster in feature_data.filtered_mobile_clusters:
-      pass
-
-    # Save the heading and position information so we can calculate our course
-    # and sensor displacement at the next ping.
+    measurements = get_measurements(feature_data)
+    weights = get_weights(particles, measurements)
+    particles = resample_particles(particles, weights)
     last_position = current_position
 
 if __name__ == "__main__":
