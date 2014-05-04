@@ -18,14 +18,6 @@ import trig
 import utils
 
 
-def get_particle_positions(particles):
-  xs, ys = [], []
-  for p in particles:
-    xs.append(p.surface_range * trig.sind(p.hor_angle))
-    ys.append(p.surface_range * trig.cosd(p.hor_angle))
-  return xs, ys
-
-
 class Particle(object):
 
   def __init__(self, fov_range, fov_angle, gps_noise, compass_noise,
@@ -140,6 +132,12 @@ def get_weights(particles, measurements):
       weight = max(weight, particle.measurement_prob(measurement))
     weights.append(weight)
   return weights
+
+
+def get_particle_positions(particles):
+  xs = [p.surface_range * trig.sind(p.hor_angle) for p in particles]
+  ys = [p.surface_range * trig.cosd(p.hor_angle) for p in particles]
+  return xs, ys
 
 
 def resample_particles(old_particles, weights):
