@@ -10,6 +10,9 @@ import math
 import os
 import random
 import sys
+import time
+
+import matplotlib.pyplot as plt
 
 import trig
 import utils
@@ -19,6 +22,14 @@ import utils
 if sys.platform != 'darwin':
   import proto.node_detection_pb2
   import proto.util
+
+
+def get_particle_positions(particles):
+  xs, ys = [], []
+  for p in particles:
+    xs.append(p.surface_range * trig.sind(p.hor_angle))
+    ys.append(p.surface_range * trig.cosd(p.hor_angle))
+  return xs, ys
 
 
 class Particle(object):
@@ -189,6 +200,13 @@ def main(argv=None):
                               args.gps_noise, args.compass_noise,
                               args.range_resolution, args.angular_resolution))
 
+  # Initialize plot.
+  # Notice (Nabin): We are plotting in interactive mode. So don't move mouse
+  # once plotting starts. You can do 'Ctrl-C' to break and exit.
+  plt.ion()
+  fig = plt.figure()
+  particle_plot = fig.add_subplot(111)
+
   # Pump.
   last_position = None
   for feature_data in get_feature_datas(args.directory, data_format):
@@ -202,6 +220,15 @@ def main(argv=None):
     weights = get_weights(particles, measurements)
     particles = resample_particles(particles, weights)
     last_position = current_position
+
+    # Visualize.
+    particle_plot.hold(False)
+    print("Plotting particles ...")
+    particle_xs, particle_ys = get_particle_positions(particles)
+    particle_plot.plot(particle_xs, particle_ys, '.')
+    particle_plot.axis([-500, 500, -500, 500])
+    plt.draw()
+    time.sleep(0.1)
 
 if __name__ == "__main__":
   sys.exit(main())
