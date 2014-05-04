@@ -21,7 +21,7 @@ def atan2d(y, x):
   return math.atan2(math.radians(y), math.radians(x))
 
 
-def get_distance(lat1, lon1, lat2, lon2):
+def distance(lat1, lon1, lat2, lon2):
   """Returns distance in meters between two lat/lon points.
   """
   lat_arc = math.radians(lat1 - lat2)
@@ -32,7 +32,7 @@ def get_distance(lat1, lon1, lat2, lon2):
   return 2.0 * EARTH_RADIUS * math.asin(math.sqrt(latH + temp * lonH))
 
 
-def get_course(lat1, lon1, lat2, lon2):
+def course(lat1, lon1, lat2, lon2):
   """Returns course in degrees between two lat/lon points relative to grid north.
   """
   delta_y = sind(lon2 - lon1) * cosd(lat2)
