@@ -168,10 +168,10 @@ def main(argv=None):
                       help="sensor lat and lon motion noise (default 10.0m)")
   parser.add_argument("--compass-noise", type=float, default=1.0,
                       help="sensor heading noise (default 1.0 degrees)")
-  parser.add_argument("--range-resolution", type=float, default=10.,
-                      help="range resolution of the sensor (default 10.0m)")
-  parser.add_argument("--angular-resolution", type=float, default=5.0,
-                      help="angular sensor resolution (default 5.0 degrees)")
+  parser.add_argument("--range-resolution", type=float, default=3.0,
+                      help="range resolution of the sensor (default 3.0m)")
+  parser.add_argument("--angular-resolution", type=float, default=1.5,
+                      help="angular sensor resolution (default 1.5 degrees)")
   parser.add_argument("-r", "--fov-range", type=float, default=500.0,
                       help="range of the field of view (default 500.0m)")
   parser.add_argument("-a", "--fov-hor-angle", type=float, default=90.0,
