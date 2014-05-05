@@ -134,6 +134,8 @@ def get_weights(particles, measurements):
 
 
 def get_particle_positions(particles):
+  """Return the x and y coordinates of the particles as two parallel lists.
+  """
   xs = [p.surface_range * trig.sind(p.hor_angle) for p in particles]
   ys = [p.surface_range * trig.cosd(p.hor_angle) for p in particles]
   return xs, ys
