@@ -5,6 +5,7 @@
 """
 
 import argparse
+import copy
 import json
 import math
 import os
@@ -150,7 +151,7 @@ def resample_particles(old_particles, weights):
     while beta > weights[index]:
       beta -= weights[index]
       index = (index + 1) % num_particles
-    new_particles.append(old_particles[index])
+    new_particles.append(copy.deepcopy(old_particles[index]))
   return new_particles
 
 
