@@ -22,7 +22,7 @@ def atan2d(y, x):
 
 
 def distance(lat1, lon1, lat2, lon2):
-  """Returns distance in meters between two lat/lon points.
+  """Return distance in meters between two lat/lon points.
   """
   lat_arc = math.radians(lat1 - lat2)
   lon_arc = math.radians(lon1 - lon2)
@@ -33,7 +33,7 @@ def distance(lat1, lon1, lat2, lon2):
 
 
 def course(lat1, lon1, lat2, lon2):
-  """Returns course in degrees between two lat/lon points relative to grid north.
+  """Return course in degrees between two lat/lon points relative to grid north.
   """
   delta_y = sind(lon2 - lon1) * cosd(lat2)
   delta_x = cosd(lat1) * sind(lat2) - sind(lat1) * cosd(lat2) * cosd(lon2 - lon1)
@@ -43,3 +43,23 @@ def course(lat1, lon1, lat2, lon2):
   while course >= 360.0:
     course -= 360.0
   return course
+
+
+def lat_degree_len(lat):
+  """Return the length of a degree of latitude at a given latitude.
+
+  From http://en.wikipedia.org/wiki/Latitude#Length_of_a_degree_of_latitude
+  """
+  return 111132.954 - 559.822 * cosd(2.0 * lat) + 1.175 * cosd(4.0 * lat)
+
+
+def lon_degree_len(lat):
+  """Return the length of a degree of longitude at a given latitude.
+
+  From http://en.wikipedia.org/wiki/Longitude#Length_of_a_degree_of_longitude
+  """
+  a = 6378137.0
+  b = 6356752.3142
+  e = math.sqrt((a**2 - b**2) / a**2)
+  return ((math.pi * a * cosd(lat)) /
+          180.0 * (1.0 - e**2 * sind(lat)**2)**(1.0/2.0))

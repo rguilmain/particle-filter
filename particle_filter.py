@@ -36,16 +36,18 @@ class Particle(object):
     """Given sensor motion, move the relative location of the particle.
     """
     # Add some Gaussian noise to the motion measurements.
-    last_lat = last_position.lat + random.gauss(0.0, self.gps_noise)
-    last_lon = last_position.lon + random.gauss(0.0, self.gps_noise)
+    lat_degree_len = trig.lat_degree_len(curr_position.lat)
+    lon_degree_len = trig.lon_degree_len(curr_position.lat)
+    lat1 = last_position.lat + random.gauss(0.0, self.gps_noise) / lat_degree_len
+    lon1 = last_position.lon + random.gauss(0.0, self.gps_noise) / lon_degree_len
     last_heading = last_position.heading + random.gauss(0.0, self.compass_noise)
-    curr_lat = curr_position.lat + random.gauss(0.0, self.gps_noise)
-    curr_lon = curr_position.lon + random.gauss(0.0, self.gps_noise)
+    lat2 = curr_position.lat + random.gauss(0.0, self.gps_noise) / lat_degree_len
+    lon2 = curr_position.lon + random.gauss(0.0, self.gps_noise) / lon_degree_len
     curr_heading = curr_position.heading + random.gauss(0.0, self.compass_noise)
 
     # Calculate how the sensor moved.
-    course = trig.course(last_lat, last_lon, curr_lat, curr_lon)
-    sensor_displacement = trig.distance(last_lat, last_lon, curr_lat, curr_lon)
+    course = trig.course(lat1, lon1, lat2, lon2)
+    sensor_displacement = trig.distance(lat1, lon1, lat2, lon2)
 
     # Calculate how to move the particle relative to the sensor.
     target_bearing = last_heading - self.hor_angle
@@ -170,10 +172,10 @@ def main(argv=None):
                       help="sensor lat and lon motion noise (default 10.0m)")
   parser.add_argument("--compass-noise", type=float, default=1.0,
                       help="sensor heading noise (default 1.0 degrees)")
-  parser.add_argument("--range-resolution", type=float, default=0.5,
-                      help="range resolution of the sensor (default 0.5m)")
-  parser.add_argument("--angular-resolution", type=float, default=1.5,
-                      help="angular sensor resolution (default 1.5 degrees)")
+  parser.add_argument("--range-resolution", type=float, default=10.,
+                      help="range resolution of the sensor (default 10.0m)")
+  parser.add_argument("--angular-resolution", type=float, default=5.0,
+                      help="angular sensor resolution (default 5.0 degrees)")
   parser.add_argument("-r", "--fov-range", type=float, default=500.0,
                       help="range of the field of view (default 500.0m)")
   parser.add_argument("-a", "--fov-hor-angle", type=float, default=90.0,
@@ -218,10 +220,9 @@ def main(argv=None):
 
     # Visualize.
     particle_plot.hold(False)
-    print("Plotting particles ...")
     particle_xs, particle_ys = get_particle_positions(particles)
     particle_plot.plot(particle_xs, particle_ys, '.')
-    particle_plot.axis([-500, 500, -500, 500])
+    particle_plot.axis([-400, 400, -50, 550])
     plt.draw()
     time.sleep(0.1)
 
