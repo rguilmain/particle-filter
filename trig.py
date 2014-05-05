@@ -36,7 +36,8 @@ def course(lat1, lon1, lat2, lon2):
   """Return course in degrees between two lat/lon points relative to grid north.
   """
   delta_y = sind(lon2 - lon1) * cosd(lat2)
-  delta_x = cosd(lat1) * sind(lat2) - sind(lat1) * cosd(lat2) * cosd(lon2 - lon1)
+  delta_x = (cosd(lat1) * sind(lat2) -
+             sind(lat1) * cosd(lat2) * cosd(lon2 - lon1))
   course = atan2d(delta_y, delta_x)
   while course < 0.0:
     course += 360.0

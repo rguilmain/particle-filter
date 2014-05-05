@@ -36,13 +36,13 @@ class Particle(object):
     """Given sensor motion, move the relative location of the particle.
     """
     # Add some Gaussian noise to the motion measurements.
-    lat_degree_len = trig.lat_degree_len(curr_position.lat)
-    lon_degree_len = trig.lon_degree_len(curr_position.lat)
-    lat1 = last_position.lat + random.gauss(0.0, self.gps_noise) / lat_degree_len
-    lon1 = last_position.lon + random.gauss(0.0, self.gps_noise) / lon_degree_len
+    lat_deg_len = trig.lat_degree_len(curr_position.lat)
+    lon_deg_len = trig.lon_degree_len(curr_position.lat)
+    lat1 = last_position.lat + random.gauss(0.0, self.gps_noise) / lat_deg_len
+    lon1 = last_position.lon + random.gauss(0.0, self.gps_noise) / lon_deg_len
     last_heading = last_position.heading + random.gauss(0.0, self.compass_noise)
-    lat2 = curr_position.lat + random.gauss(0.0, self.gps_noise) / lat_degree_len
-    lon2 = curr_position.lon + random.gauss(0.0, self.gps_noise) / lon_degree_len
+    lat2 = curr_position.lat + random.gauss(0.0, self.gps_noise) / lat_deg_len
+    lon2 = curr_position.lon + random.gauss(0.0, self.gps_noise) / lon_deg_len
     curr_heading = curr_position.heading + random.gauss(0.0, self.compass_noise)
 
     # Calculate how the sensor moved.
