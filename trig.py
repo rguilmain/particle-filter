@@ -18,7 +18,7 @@ def cosd(x):
 
 
 def atan2d(y, x):
-  return math.atan2(math.radians(y), math.radians(x))
+  return math.degrees(math.atan2(math.radians(y), math.radians(x)))
 
 
 def distance(lat1, lon1, lat2, lon2):
