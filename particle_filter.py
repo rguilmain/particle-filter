@@ -175,6 +175,8 @@ def main(argv=None):
                       help="range resolution of the sensor (default 3.0m)")
   parser.add_argument("--angular-resolution", type=float, default=1.5,
                       help="angular sensor resolution (default 1.5 degrees)")
+  parser.add_argument("-t", "--timeout", type=float, default=0.0,
+                      help="seconds to wait between pings (default 0.0s)")
   parser.add_argument("-r", "--fov-range", type=float, default=500.0,
                       help="range of the field of view (default 500.0m)")
   parser.add_argument("-a", "--fov-hor-angle", type=float, default=90.0,
@@ -223,7 +225,7 @@ def main(argv=None):
     particle_plot.plot(particle_xs, particle_ys, '.')
     particle_plot.axis([-400, 400, -50, 550])
     plt.draw()
-    time.sleep(0.1)
+    time.sleep(args.timeout)
 
 if __name__ == "__main__":
   sys.exit(main())
