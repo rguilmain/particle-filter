@@ -15,6 +15,7 @@ import time
 
 import matplotlib.pyplot as plt
 
+import geo
 import trig
 import utils
 
@@ -37,8 +38,8 @@ class Particle(object):
     """Given sensor motion, move the relative location of the particle.
     """
     # Add some Gaussian noise to the motion measurements.
-    lat_deg_len = trig.lat_degree_len(curr_position.lat)
-    lon_deg_len = trig.lon_degree_len(curr_position.lat)
+    lat_deg_len = geo.lat_degree_len(curr_position.lat)
+    lon_deg_len = geo.lon_degree_len(curr_position.lat)
     lat1 = last_position.lat + random.gauss(0.0, self.gps_noise) / lat_deg_len
     lon1 = last_position.lon + random.gauss(0.0, self.gps_noise) / lon_deg_len
     last_heading = last_position.heading + random.gauss(0.0, self.compass_noise)
@@ -47,8 +48,8 @@ class Particle(object):
     curr_heading = curr_position.heading + random.gauss(0.0, self.compass_noise)
 
     # Calculate how the sensor moved.
-    course = trig.course(lat1, lon1, lat2, lon2)
-    sensor_displacement = trig.distance(lat1, lon1, lat2, lon2)
+    course = geo.course(lat1, lon1, lat2, lon2)
+    sensor_displacement = geo.distance(lat1, lon1, lat2, lon2)
 
     # Calculate how to move the particle relative to the sensor.
     target_bearing = last_heading - self.hor_angle
