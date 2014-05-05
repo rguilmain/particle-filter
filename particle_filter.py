@@ -58,12 +58,7 @@ class Particle(object):
     n1 = sensor_displacement * trig.cosd(course)
     e2 = self.surface_range * trig.sind(target_bearing)
     n2 = self.surface_range * trig.cosd(target_bearing)
-    predicted_target_bearing = trig.atan2d(e2 - e1, n2 - n1)
-    # The following check converts atan2d()'s output in the range of
-    # [-180.0, +180.0] to the expected range for a target bearing, i.e.
-    # [0.0, +360.0).
-    if predicted_target_bearing < 0.0:
-      predicted_target_bearing += 360.0
+    predicted_target_bearing = trig.atan2d(e2 - e1, n2 - n1) % 360.0
     self.hor_angle = curr_heading - predicted_target_bearing
     self.surface_range = math.sqrt((e2 - e1)**2 + (n2 - n1)**2)
 
