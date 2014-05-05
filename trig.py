@@ -38,12 +38,7 @@ def course(lat1, lon1, lat2, lon2):
   delta_y = sind(lon2 - lon1) * cosd(lat2)
   delta_x = (cosd(lat1) * sind(lat2) -
              sind(lat1) * cosd(lat2) * cosd(lon2 - lon1))
-  course = atan2d(delta_y, delta_x)
-  while course < 0.0:
-    course += 360.0
-  while course >= 360.0:
-    course -= 360.0
-  return course
+  return atan2d(delta_y, delta_x) % 360.0
 
 
 def lat_degree_len(lat):
