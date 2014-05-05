@@ -115,9 +115,10 @@ def get_measurements(feature_data):
   """Return the locations of the detected targets in the feature data.
   """
   measurements = []
-  for cluster in feature_data.filtered_mobile_clusters:
-    measurements.append(
-      Measurement(cluster.centroid.range, cluster.centroid.hor_ang))
+  if hasattr(feature_data, 'filtered_mobile_clusters'):
+    for cluster in feature_data.filtered_mobile_clusters:
+      measurements.append(
+        Measurement(cluster.centroid.range, cluster.centroid.hor_ang))
   return measurements
 
 
@@ -125,6 +126,8 @@ def get_weights(particles, measurements):
   """Return a list of likelihood weights parallel to the particles list.
   """
   weights = []
+  if not measurements:
+    return weights
   for particle in particles:
     weight = 0.0
     for measurement in measurements:
@@ -138,6 +141,14 @@ def get_particle_positions(particles):
   """
   xs = [p.surface_range * trig.sind(p.hor_angle) for p in particles]
   ys = [p.surface_range * trig.cosd(p.hor_angle) for p in particles]
+  return xs, ys
+
+
+def get_measurement_positions(measurements):
+  """Return the x and y coordinates of the measurements as two parallel lists.
+  """
+  xs = [m.surface_range * trig.sind(m.hor_angle) for m in measurements]
+  ys = [m.surface_range * trig.cosd(m.hor_angle) for m in measurements]
   return xs, ys
 
 
@@ -179,6 +190,8 @@ def main(argv=None):
                       help="range of the field of view (default 500.0m)")
   parser.add_argument("-a", "--fov-hor-angle", type=float, default=90.0,
                       help="number of degrees in field of view (default 90.0)")
+  parser.add_argument("-m", "--show-measurements", action="store_true",
+                      help="show measurements in the particle plot")
   args = parser.parse_args()
 
   if not os.path.isdir(args.directory):
@@ -213,7 +226,9 @@ def main(argv=None):
       for particle in particles:
         particle.move(last_position, current_position)
     measurements = get_measurements(feature_data)
-    weights = get_weights(particles, measurements)
+    new_weights = get_weights(particles, measurements)
+    if new_weights:
+      weights = new_weights
     particles = resample_particles(particles, weights)
     last_position = current_position
 
@@ -221,9 +236,14 @@ def main(argv=None):
     particle_plot.hold(False)
     particle_xs, particle_ys = get_particle_positions(particles)
     particle_plot.plot(particle_xs, particle_ys, '.')
+    if args.show_measurements:
+      particle_plot.hold(True)
+      measurement_xs, measurement_ys = get_measurement_positions(
+        measurements)
+      particle_plot.plot(measurement_xs, measurement_ys, 'ro')
     particle_plot.axis([-400, 400, -50, 550])
     plt.draw()
-    time.sleep(0.1)
+    time.sleep(0.01)
 
 if __name__ == "__main__":
   sys.exit(main())
