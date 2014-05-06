@@ -218,6 +218,10 @@ def main(argv=None):
   fig = plt.figure()
   particle_plot = fig.add_subplot(111)
 
+  # Collection of filtered position computed from posterior particles.
+  filtered_xs = []
+  filtered_ys = []
+
   # Pump.
   last_position = None
   for feature_data in get_feature_datas(args.directory, data_format):
@@ -232,20 +236,28 @@ def main(argv=None):
     if new_weights:
       weights = new_weights
     particles = resample_particles(particles, weights)
+    particle_xs, particle_ys = get_particle_positions(particles)
+    filtered_x, filtered_y = utils.extract_position_from_particles(
+      particle_xs, particle_ys, weights)
+    filtered_xs.append(filtered_x)
+    filtered_ys.append(filtered_y)
     last_position = current_position
 
     # Visualize.
     particle_plot.hold(False)
-    particle_xs, particle_ys = get_particle_positions(particles)
     particle_plot.plot(particle_xs, particle_ys, '.')
+    particle_plot.hold(True)
+    particle_plot.plot(filtered_xs, filtered_ys, 'go')
+    particle_plot.plot(filtered_x, filtered_y, 'm^')
     if args.show_measurements:
-      particle_plot.hold(True)
       measurement_xs, measurement_ys = get_measurement_positions(
         measurements)
       particle_plot.plot(measurement_xs, measurement_ys, 'ro')
     particle_plot.axis([-400, 400, -50, 550])
+    utils.draw_fov(particle_plot)
     plt.draw()
     time.sleep(args.timeout)
+
 
 if __name__ == "__main__":
   sys.exit(main())
