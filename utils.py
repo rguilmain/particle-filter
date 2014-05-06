@@ -28,8 +28,10 @@ class Struct(object):
           self.__dict__[k].append(Struct(e))
 
 
-def extract_position_from_particles(particle_xs, particle_ys, weights):
-  assert(len(particle_xs) == len(particle_ys) == len(weights))
+def extract_position_from_particles(particle_xs, particle_ys):
+  """Compute the average of particles as filtered diver state (position).
+  """
+  assert(len(particle_xs) == len(particle_ys))
   x = 0.0
   y = 0.0
   for px, py in zip(particle_xs, particle_ys):
@@ -39,7 +41,7 @@ def extract_position_from_particles(particle_xs, particle_ys, weights):
 
 
 def draw_fov(ax):
-  """Don't mind the magic numbers for now.
+  """Draw sonar FoV. Don't mind the magic numbers for now.
   """
   p_left = 500.0 * numpy.array(
     [trig.sind(-45.0), trig.cosd(45.0)])

@@ -238,7 +238,7 @@ def main(argv=None):
     particles = resample_particles(particles, weights)
     particle_xs, particle_ys = get_particle_positions(particles)
     filtered_x, filtered_y = utils.extract_position_from_particles(
-      particle_xs, particle_ys, weights)
+      particle_xs, particle_ys)
     filtered_xs.append(filtered_x)
     filtered_ys.append(filtered_y)
     last_position = current_position
@@ -255,6 +255,8 @@ def main(argv=None):
       particle_plot.plot(measurement_xs, measurement_ys, 'ro')
     particle_plot.axis([-400, 400, -50, 550])
     utils.draw_fov(particle_plot)
+    particle_plot.set_xlabel("meters")
+    particle_plot.set_ylabel("meters")
     plt.draw()
     time.sleep(args.timeout)
 
