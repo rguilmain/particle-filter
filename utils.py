@@ -40,6 +40,14 @@ def extract_position_from_particles(particle_xs, particle_ys):
   return x / len(particle_xs), y / len(particle_xs)
 
 
+def get_measurement_positions(measurements):
+  """Return the x and y coordinates of the measurements as two parallel lists.
+  """
+  xs = [m.surface_range * trig.sind(m.hor_angle) for m in measurements]
+  ys = [m.surface_range * trig.cosd(m.hor_angle) for m in measurements]
+  return xs, ys
+
+
 def draw_fov(ax):
   """Draw sonar FoV. Don't mind the magic numbers for now.
   """
@@ -56,4 +64,23 @@ def draw_fov(ax):
   ax.add_line(line_left)
   ax.add_line(line_right)
   ax.add_patch(arc)
-  
+
+
+def plot_data(particle_xs, particle_ys, filtered_xs, filtered_ys,
+              measurements, i, show_measurements, particle_plot):
+  """Plot particles, estimated diver locations and measurements.
+  """
+  particle_plot.hold(False)
+  particle_plot.grid(True)
+  particle_plot.plot(particle_xs, particle_ys, '.')
+  particle_plot.hold(True)
+  particle_plot.plot(filtered_xs, filtered_ys, 'go')
+  if show_measurements:
+    measurement_xs, measurement_ys = get_measurement_positions(
+      measurements)
+    particle_plot.plot(measurement_xs, measurement_ys, 'ro')
+  particle_plot.axis([-400, 400, -50, 550])
+  draw_fov(particle_plot)
+  particle_plot.set_xlabel("meters")
+  particle_plot.set_ylabel("meters")
+  particle_plot.set_title("Step: %03d" % i)
