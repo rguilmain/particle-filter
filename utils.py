@@ -74,7 +74,8 @@ def plot_data(particle_xs, particle_ys, filtered_xs, filtered_ys,
   particle_plot.grid(True)
   particle_plot.plot(particle_xs, particle_ys, '.')
   particle_plot.hold(True)
-  particle_plot.plot(filtered_xs, filtered_ys, 'go')
+  particle_plot.plot(filtered_xs, filtered_ys, 'co:
+', markeredgecolor='none')
   if show_measurements:
     measurement_xs, measurement_ys = get_measurement_positions(
       measurements)

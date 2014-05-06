@@ -218,8 +218,6 @@ def main(argv=None):
     os.makedirs("images")
   if args.write_latlon:
     latlon_file = open("diver_position_estimates.txt", 'w')
-    latlon_file.write("# sec, lat, lon \n")
-    
 
   # Collection of filtered position computed from posterior particles.
   filtered_xs, filtered_ys = [], []
