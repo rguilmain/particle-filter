@@ -188,6 +188,9 @@ def main(argv=None):
                       help="show measurements in the particle plot")
   parser.add_argument("--save-figure", action="store_true",
                       help="save figure frames as images")
+  parser.add_argument("--write-latlon", action="store_true",
+                      help=("Save diver position estimates as"
+                            "lat/lon's to a file"))
   args = parser.parse_args()
 
   if not os.path.isdir(args.directory):
@@ -213,13 +216,13 @@ def main(argv=None):
   particle_plot = fig.add_subplot(111)
   if args.save_figure and not os.path.isdir("images"):
     os.makedirs("images")
+  if args.write_latlon:
+    latlon_file = open("diver_position_estimates.txt", 'w')
+    latlon_file.write("# sec, lat, lon \n")
     
 
   # Collection of filtered position computed from posterior particles.
-  # Todo (Nabin): Save filtered lat/lons to file and compare with
-  # diver gps data (probably in separate script).
   filtered_xs, filtered_ys = [], []
-  filtered_lats, filtered_lons = [], []
 
   # Pump.
   last_position = None
@@ -243,8 +246,6 @@ def main(argv=None):
       current_position.lat, current_position.lon, filtered_x, filtered_y)
     filtered_xs.append(filtered_x)
     filtered_ys.append(filtered_y)
-    filtered_lats.append(filtered_lat)
-    filtered_lons.append(filtered_lon)
     last_position = current_position
 
     utils.plot_data(particle_xs, particle_ys, filtered_xs, filtered_ys,
@@ -252,7 +253,14 @@ def main(argv=None):
     plt.draw()
     if args.save_figure:
       plt.savefig("images//%03d.png" % i, format='png')
+    if args.write_latlon:
+      latlon_file.write(
+        "%d,%0.9f,%0.9f\n" % (utils.date_to_sec(
+          feature_data.time), filtered_lat, filtered_lon))
+      latlon_file.flush()
     time.sleep(args.timeout)
+  if args.write_latlon:
+    latlon_file.close()
 
 
 if __name__ == "__main__":

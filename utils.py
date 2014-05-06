@@ -84,3 +84,13 @@ def plot_data(particle_xs, particle_ys, filtered_xs, filtered_ys,
   particle_plot.set_xlabel("meters")
   particle_plot.set_ylabel("meters")
   particle_plot.set_title("Step: %03d" % i)
+
+
+def date_to_sec(time_struct):
+  """Returns number of seconds equivalent to the HHMMSS.uuu
+  of a date, discards YYMMDD.
+  """
+  return (time_struct.hour * 3600.0 +
+          time_struct.minute * 60.0 +
+          time_struct.second * 1.0 +
+          time_struct.millisecond * 1e-3)
