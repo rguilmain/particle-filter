@@ -53,12 +53,14 @@ def interpolate_gps_data(gps_data, times):
 def plot_data(gps_data, particle_data):
   fig = plt.figure()
   particle_plot = fig.add_subplot(111)
-  plt.plot(gps_data.lons, gps_data.lats, 'go')
+  plt.plot(gps_data.lons, gps_data.lats, 'go', label="GPS")
   plt.hold(True)
-  plt.plot(particle_data.lons, particle_data.lats, 'mo')
+  plt.plot(particle_data.lons, particle_data.lats, 'mo', label="Filter")
+  plt.xlabel("lon (deg.)")
+  plt.ylabel("lat (deg.)")
+  plt.legend()
   plt.show()
-  
-      
+
 
 def main(argv=None):
   if argv is not None:
