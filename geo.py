@@ -66,8 +66,8 @@ def add_offsets_to_latlons(geo_position, x_particle, y_particle):
   y_sonar = -SONAR_X_RE_GPS * trig.sind(hdg) + SONAR_Y_RE_GPS * trig.cosd(hdg)
   x_p = x_particle * trig.cosd(hdg) + y_particle * trig.sind(hdg)
   y_p = -x_particle * trig.sind(hdg) + y_particle * trig.cosd(hdg)
-  x_meters = x_sonar + x_particle
-  y_meters = y_sonar + y_particle
+  x_meters = x_sonar + x_p
+  y_meters = y_sonar + y_p
   lat_out = lat + math.degrees(y_meters / EARTH_RADIUS)
   lon_out = lon + math.degrees(x_meters / (EARTH_RADIUS * trig.cosd(lat)))
   return lat_out, lon_out
