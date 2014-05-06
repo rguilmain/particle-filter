@@ -50,3 +50,16 @@ def lon_degree_len(lat):
   e = math.sqrt((a**2 - b**2) / a**2)
   return ((math.pi * a * trig.cosd(lat)) /
           180.0 * (1.0 - e**2 * trig.sind(lat)**2)**(1.0/2.0))
+
+
+def add_offsets_to_latlons(lat, lon, x_meters, y_meters):
+  """Return latitude and longitude after adding x (positive along east)
+  and y (positive along north) offsets in meters to input latitude and
+  longitude.
+
+  From http://gis.stackexchange.com/questions/2951/algorithm-for-offsetting-a-latitude-longitude-by-some-amount-of-meters
+  """
+  math.degrees(x_meters / (EARTH_RADIUS * trig.cosd(lat)))
+  lat_out = lat + math.degrees(y_meters / EARTH_RADIUS)
+  lon_out = lon + math.degrees(x_meters / (EARTH_RADIUS * trig.cosd(lat)))
+  return lat_out, lon_out
