@@ -184,8 +184,8 @@ def main(argv=None):
                       help="range of the field of view (default 500.0m)")
   parser.add_argument("-a", "--fov-hor-angle", type=float, default=90.0,
                       help="number of degrees in field of view (default 90.0)")
-  parser.add_argument("-m", "--show-measurements", action="store_true",
-                      help="show measurements in the particle plot")
+  parser.add_argument("-m", "--hide-measurements", action="store_true",
+                      help="hide measurements in the particle plot")
   parser.add_argument("--save-figure", action="store_true",
                       help="save figure frames as images")
   parser.add_argument("--write-latlon", action="store_true",
@@ -247,7 +247,7 @@ def main(argv=None):
     last_position = current_position
 
     utils.plot_data(particle_xs, particle_ys, filtered_xs, filtered_ys,
-                    measurements, i, args.show_measurements, particle_plot)
+                    measurements, i, args.hide_measurements, particle_plot)
     plt.draw()
     if args.save_figure:
       plt.savefig("images//%03d.png" % i, format='png')

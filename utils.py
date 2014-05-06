@@ -13,7 +13,7 @@ import trig
 # Convert a dictionary to a class
 # Reference: http://kiennt.com/blog/2012/06/14/python-object-and-dictionary-convertion.html
 class Struct(object):
-    
+
   def __init__(self, adict):
     """Convert a dictionary to a class. Can handle dict of dicts that
     might have list of dicts.
@@ -67,7 +67,7 @@ def draw_fov(ax):
 
 
 def plot_data(particle_xs, particle_ys, filtered_xs, filtered_ys,
-              measurements, i, show_measurements, particle_plot):
+              measurements, i, hide_measurements, particle_plot):
   """Plot particles, estimated diver locations and measurements.
   """
   particle_plot.hold(False)
@@ -75,7 +75,7 @@ def plot_data(particle_xs, particle_ys, filtered_xs, filtered_ys,
   particle_plot.plot(particle_xs, particle_ys, '.')
   particle_plot.hold(True)
   particle_plot.plot(filtered_xs, filtered_ys, 'co:', markeredgecolor='none')
-  if show_measurements:
+  if not hide_measurements:
     measurement_xs, measurement_ys = get_measurement_positions(
       measurements)
     particle_plot.plot(measurement_xs, measurement_ys, 'ro')
