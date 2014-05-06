@@ -139,7 +139,7 @@ def get_weights(particles, measurements):
 def get_particle_positions(particles):
   """Return the x and y coordinates of the particles as two parallel lists.
   """
-  xs = [p.surface_range * trig.sind(p.hor_angle) for p in particles]
+  xs = [-p.surface_range * trig.sind(p.hor_angle) for p in particles]
   ys = [p.surface_range * trig.cosd(p.hor_angle) for p in particles]
   return xs, ys
 
@@ -241,7 +241,7 @@ def main(argv=None):
     filtered_x, filtered_y = utils.extract_position_from_particles(
       particle_xs, particle_ys)
     filtered_lat, filtered_lon = geo.add_offsets_to_latlons(
-      current_position.lat, current_position.lon, filtered_x, filtered_y)
+      current_position, filtered_x, filtered_y)
     filtered_xs.append(filtered_x)
     filtered_ys.append(filtered_y)
     last_position = current_position

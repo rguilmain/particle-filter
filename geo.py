@@ -10,6 +10,8 @@ import trig
 
 EARTH_RADIUS = 6372797.560856
 
+SONAR_X_RE_GPS = 0.19
+SONAR_Y_RE_GPS = 7.92
 
 def distance(lat1, lon1, lat2, lon2):
   """Return distance in meters between two lat/lon points.
@@ -52,14 +54,20 @@ def lon_degree_len(lat):
           180.0 * (1.0 - e**2 * trig.sind(lat)**2)**(1.0/2.0))
 
 
-def add_offsets_to_latlons(lat, lon, x_meters, y_meters):
+def add_offsets_to_latlons(geo_position, x_particle, y_particle):
   """Return latitude and longitude after adding x (positive along east)
   and y (positive along north) offsets in meters to input latitude and
   longitude.
 
   From http://gis.stackexchange.com/questions/2951/algorithm-for-offsetting-a-latitude-longitude-by-some-amount-of-meters
   """
-  math.degrees(x_meters / (EARTH_RADIUS * trig.cosd(lat)))
+  lat, lon, hdg = geo_position.lat, geo_position.lon, geo_position.heading
+  x_sonar = SONAR_X_RE_GPS * trig.cosd(hdg) + SONAR_Y_RE_GPS * trig.sind(hdg)
+  y_sonar = -SONAR_X_RE_GPS * trig.sind(hdg) + SONAR_Y_RE_GPS * trig.cosd(hdg)
+  x_p = x_particle * trig.cosd(hdg) + y_particle * trig.sind(hdg)
+  y_p = -x_particle * trig.sind(hdg) + y_particle * trig.cosd(hdg)
+  x_meters = x_sonar + x_particle
+  y_meters = y_sonar + y_particle
   lat_out = lat + math.degrees(y_meters / EARTH_RADIUS)
   lon_out = lon + math.degrees(x_meters / (EARTH_RADIUS * trig.cosd(lat)))
   return lat_out, lon_out
