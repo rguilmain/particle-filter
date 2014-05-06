@@ -144,14 +144,6 @@ def get_particle_positions(particles):
   return xs, ys
 
 
-def get_measurement_positions(measurements):
-  """Return the x and y coordinates of the measurements as two parallel lists.
-  """
-  xs = [m.surface_range * trig.sind(m.hor_angle) for m in measurements]
-  ys = [m.surface_range * trig.cosd(m.hor_angle) for m in measurements]
-  return xs, ys
-
-
 def resample_particles(old_particles, weights):
   """Do a weighted resampling with replacement of our particles.
   """
@@ -194,6 +186,8 @@ def main(argv=None):
                       help="number of degrees in field of view (default 90.0)")
   parser.add_argument("-m", "--show-measurements", action="store_true",
                       help="show measurements in the particle plot")
+  parser.add_argument("--save-figure", action="store_true",
+                      help="save figure frames as images")
   args = parser.parse_args()
 
   if not os.path.isdir(args.directory):
@@ -217,14 +211,20 @@ def main(argv=None):
   plt.ion()
   fig = plt.figure()
   particle_plot = fig.add_subplot(111)
+  if args.save_figure and not os.path.isdir("images"):
+    os.makedirs("images")
+    
 
   # Collection of filtered position computed from posterior particles.
-  filtered_xs = []
-  filtered_ys = []
+  # Todo (Nabin): Save filtered lat/lons to file and compare with
+  # diver gps data (probably in separate script).
+  filtered_xs, filtered_ys = [], []
+  filtered_lats, filtered_lons = [], []
 
   # Pump.
   last_position = None
-  for feature_data in get_feature_datas(args.directory, data_format):
+  for i, feature_data in enumerate(
+      get_feature_datas(args.directory, data_format)):
     current_position = SensorPosition(feature_data.position.lat,
                                       feature_data.position.lon,
                                       feature_data.heading.heading)
@@ -239,25 +239,19 @@ def main(argv=None):
     particle_xs, particle_ys = get_particle_positions(particles)
     filtered_x, filtered_y = utils.extract_position_from_particles(
       particle_xs, particle_ys)
+    filtered_lat, filtered_lon = geo.add_offsets_to_latlons(
+      current_position.lat, current_position.lon, filtered_x, filtered_y)
     filtered_xs.append(filtered_x)
     filtered_ys.append(filtered_y)
+    filtered_lats.append(filtered_lat)
+    filtered_lons.append(filtered_lon)
     last_position = current_position
 
-    # Visualize.
-    particle_plot.hold(False)
-    particle_plot.plot(particle_xs, particle_ys, '.')
-    particle_plot.hold(True)
-    particle_plot.plot(filtered_xs, filtered_ys, 'go')
-    particle_plot.plot(filtered_x, filtered_y, 'm^')
-    if args.show_measurements:
-      measurement_xs, measurement_ys = get_measurement_positions(
-        measurements)
-      particle_plot.plot(measurement_xs, measurement_ys, 'ro')
-    particle_plot.axis([-400, 400, -50, 550])
-    utils.draw_fov(particle_plot)
-    particle_plot.set_xlabel("meters")
-    particle_plot.set_ylabel("meters")
+    utils.plot_data(particle_xs, particle_ys, filtered_xs, filtered_ys,
+                    measurements, i, args.show_measurements, particle_plot)
     plt.draw()
+    if args.save_figure:
+      plt.savefig("images//%03d.png" % i, format='png')
     time.sleep(args.timeout)
 
 
