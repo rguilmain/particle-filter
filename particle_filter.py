@@ -144,14 +144,6 @@ def get_particle_positions(particles):
   return xs, ys
 
 
-def get_measurement_positions(measurements):
-  """Return the x and y coordinates of the measurements as two parallel lists.
-  """
-  xs = [m.surface_range * trig.sind(m.hor_angle) for m in measurements]
-  ys = [m.surface_range * trig.cosd(m.hor_angle) for m in measurements]
-  return xs, ys
-
-
 def resample_particles(old_particles, weights):
   """Do a weighted resampling with replacement of our particles.
   """
@@ -186,14 +178,19 @@ def main(argv=None):
                       help="range resolution of the sensor (default 3.0m)")
   parser.add_argument("--angular-resolution", type=float, default=1.5,
                       help="angular sensor resolution (default 1.5 degrees)")
-  parser.add_argument("-t", "--timeout", type=float, default=0.0,
-                      help="seconds to wait between pings (default 0.0s)")
+  parser.add_argument("-t", "--timeout", type=float, default=0.01,
+                      help="seconds to wait between pings (default 0.01s)")
   parser.add_argument("-r", "--fov-range", type=float, default=500.0,
                       help="range of the field of view (default 500.0m)")
   parser.add_argument("-a", "--fov-hor-angle", type=float, default=90.0,
                       help="number of degrees in field of view (default 90.0)")
   parser.add_argument("-m", "--show-measurements", action="store_true",
                       help="show measurements in the particle plot")
+  parser.add_argument("--save-figure", action="store_true",
+                      help="save figure frames as images")
+  parser.add_argument("--write-latlon", action="store_true",
+                      help=("Save diver position estimates as"
+                            "lat/lon's to a file"))
   args = parser.parse_args()
 
   if not os.path.isdir(args.directory):
@@ -217,10 +214,18 @@ def main(argv=None):
   plt.ion()
   fig = plt.figure()
   particle_plot = fig.add_subplot(111)
+  if args.save_figure and not os.path.isdir("images"):
+    os.makedirs("images")
+  if args.write_latlon:
+    latlon_file = open("diver_position_estimates.txt", 'w')
+
+  # Collection of filtered position computed from posterior particles.
+  filtered_xs, filtered_ys = [], []
 
   # Pump.
   last_position = None
-  for feature_data in get_feature_datas(args.directory, data_format):
+  for i, feature_data in enumerate(
+      get_feature_datas(args.directory, data_format)):
     current_position = SensorPosition(feature_data.position.lat,
                                       feature_data.position.lon,
                                       feature_data.heading.heading)
@@ -232,20 +237,29 @@ def main(argv=None):
     if new_weights:
       weights = new_weights
     particles = resample_particles(particles, weights)
+    particle_xs, particle_ys = get_particle_positions(particles)
+    filtered_x, filtered_y = utils.extract_position_from_particles(
+      particle_xs, particle_ys)
+    filtered_lat, filtered_lon = geo.add_offsets_to_latlons(
+      current_position.lat, current_position.lon, filtered_x, filtered_y)
+    filtered_xs.append(filtered_x)
+    filtered_ys.append(filtered_y)
     last_position = current_position
 
-    # Visualize.
-    particle_plot.hold(False)
-    particle_xs, particle_ys = get_particle_positions(particles)
-    particle_plot.plot(particle_xs, particle_ys, '.')
-    if args.show_measurements:
-      particle_plot.hold(True)
-      measurement_xs, measurement_ys = get_measurement_positions(
-        measurements)
-      particle_plot.plot(measurement_xs, measurement_ys, 'ro')
-    particle_plot.axis([-400, 400, -50, 550])
+    utils.plot_data(particle_xs, particle_ys, filtered_xs, filtered_ys,
+                    measurements, i, args.show_measurements, particle_plot)
     plt.draw()
+    if args.save_figure:
+      plt.savefig("images//%03d.png" % i, format='png')
+    if args.write_latlon:
+      latlon_file.write(
+        "%d,%0.9f,%0.9f\n" % (utils.date_to_sec(
+          feature_data.time), filtered_lat, filtered_lon))
+      latlon_file.flush()
     time.sleep(args.timeout)
+  if args.write_latlon:
+    latlon_file.close()
+
 
 if __name__ == "__main__":
   sys.exit(main())
