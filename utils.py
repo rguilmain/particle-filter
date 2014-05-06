@@ -43,7 +43,7 @@ def extract_position_from_particles(particle_xs, particle_ys):
 def get_measurement_positions(measurements):
   """Return the x and y coordinates of the measurements as two parallel lists.
   """
-  xs = [m.surface_range * trig.sind(m.hor_angle) for m in measurements]
+  xs = [-m.surface_range * trig.sind(m.hor_angle) for m in measurements]
   ys = [m.surface_range * trig.cosd(m.hor_angle) for m in measurements]
   return xs, ys
 
@@ -74,8 +74,7 @@ def plot_data(particle_xs, particle_ys, filtered_xs, filtered_ys,
   particle_plot.grid(True)
   particle_plot.plot(particle_xs, particle_ys, '.')
   particle_plot.hold(True)
-  particle_plot.plot(filtered_xs, filtered_ys, 'co:
-', markeredgecolor='none')
+  particle_plot.plot(filtered_xs, filtered_ys, 'co:', markeredgecolor='none')
   if show_measurements:
     measurement_xs, measurement_ys = get_measurement_positions(
       measurements)
