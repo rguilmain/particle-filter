@@ -126,8 +126,9 @@ def plot_data(particle_xs, particle_ys, filtered_xs, filtered_ys,
     particle_plot.plot(measurement_xs, measurement_ys, 'ro')
   particle_plot.axis([-200, 600, -400, 400])
   draw_fov(particle_plot, acc_dx, acc_dy, heading)
-  particle_plot.set_xlabel("meters")
-  particle_plot.set_ylabel("meters")
+  particle_plot.set_xlabel("east (meters)")
+  particle_plot.set_ylabel("north (meters)")
+  particle_plot.grid(True)
   if i < 0:
     particle_plot.set_title("Initialization")
   else:
