@@ -194,25 +194,25 @@ def main(argv=None):
     sys.stdout.write("Could not find the {} directory!".format(args.directory))
     return
 
+  if args.save_figure and not os.path.isdir("images"):
+    os.makedirs("images")
+  if args.write_latlon:
+    latlon_file = open("diver_position_estimates.txt", 'w')
+
   # This assumes the input directory is of the form *-<data_format> where
   # <data_format> is either 'proto' or 'json'.
   data_format = args.directory.split('-')[-1]
 
+  # Read first data file to get position for drawing initialization.
   feature_data = get_first_feature_data(args.directory, data_format)
   init_position = SensorPosition(feature_data.position.lat,
                                  feature_data.position.lon,
                                  feature_data.heading.heading)
 
   # Initialize plot.
-  # Notice (Nabin): We are plotting in interactive mode. So don't move mouse
-  # once plotting starts. You can do 'Ctrl-C' to break and exit.
   plt.ion()
   fig = plt.figure()
   particle_plot = fig.add_subplot(111)
-  if args.save_figure and not os.path.isdir("images"):
-    os.makedirs("images")
-  if args.write_latlon:
-    latlon_file = open("diver_position_estimates.txt", 'w')
 
   # Accumulated x- and y-dispalcement of sensor (ship) in meters re starting
   # position.
@@ -224,13 +224,15 @@ def main(argv=None):
     particles.append(Particle(args.fov_range, args.fov_hor_angle,
                               args.range_noise, args.angle_noise,
                               args.range_resolution, args.angular_resolution))
-  particle_xs, particle_ys = utils.get_particle_positions(particles, acc_dx, acc_dy, init_position.heading)
-  utils.plot_data(particle_xs, particle_ys, [], [], [], -1,
-                  True, acc_dx, acc_dy, init_position.heading, particle_plot)
-  plt.draw()
 
   # Collection of filtered position computed from posterior particles.
   filtered_xs, filtered_ys = [], []
+
+  particle_xs, particle_ys = utils.get_particle_positions(
+    particles, acc_dx, acc_dy, init_position.heading)
+  utils.plot_data(particle_xs, particle_ys, filtered_xs, filtered_ys, [], -1,
+                  True, acc_dx, acc_dy, init_position.heading, particle_plot)
+  plt.draw()
 
   # Pump.
   last_position = None
@@ -251,7 +253,8 @@ def main(argv=None):
     if new_weights:
       weights = new_weights
     particles = resample_particles(particles, weights)
-    particle_xs, particle_ys = utils.get_particle_positions(particles, acc_dx, acc_dy, current_position.heading)
+    particle_xs, particle_ys = utils.get_particle_positions(
+      particles, acc_dx, acc_dy, current_position.heading)
     filtered_x, filtered_y = utils.extract_position_from_particles(
       particle_xs, particle_ys)
     filtered_lat, filtered_lon = geo.add_offsets_to_latlons(
@@ -264,6 +267,7 @@ def main(argv=None):
                     measurements, i, args.hide_measurements, acc_dx, acc_dy,
                     current_position.heading, particle_plot)
     plt.draw()
+
     if args.save_figure:
       plt.savefig("images//%03d.png" % i, format='png')
     if args.write_latlon:

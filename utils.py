@@ -128,7 +128,10 @@ def plot_data(particle_xs, particle_ys, filtered_xs, filtered_ys,
   draw_fov(particle_plot, acc_dx, acc_dy, heading)
   particle_plot.set_xlabel("meters")
   particle_plot.set_ylabel("meters")
-  particle_plot.set_title("Step: %03d" % i)
+  if i < 0:
+    particle_plot.set_title("Initialization")
+  else:
+    particle_plot.set_title("Step: %03d" % i)
 
 
 def date_to_sec(time_struct):
