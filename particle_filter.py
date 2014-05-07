@@ -34,7 +34,7 @@ class Particle(object):
     self.range_resolution = range_resolution
     self.angular_resolution = angular_resolution
 
-  def move(self, last_position, curr_position):
+  def move(self, last_position, curr_position, e1, n1):
     """Given sensor motion, move the relative location of the particle.
     """
     # Add some Gaussian noise to the motion measurements.
@@ -52,17 +52,20 @@ class Particle(object):
     sensor_displacement = geo.distance(lat1, lon1, lat2, lon2)
 
     # Calculate how to move the particle relative to the sensor.
-    target_bearing = last_heading - self.hor_angle
+    # target_bearing = last_heading - self.hor_angle
+    target_bearing = last_position.heading - self.hor_angle
+
     # In Cartesian coordinates, let (0, 0) represent the sensor's previous
     # position, (e1, n1) represent the sensor's current position, and (e2, n2)
     # represent the target's position.
-    e1 = sensor_displacement * trig.sind(course)
-    n1 = sensor_displacement * trig.cosd(course)
+    # e1 = sensor_displacement * trig.sind(course)
+    # n1 = sensor_displacement * trig.cosd(course)
     e2 = self.surface_range * trig.sind(target_bearing)
     n2 = self.surface_range * trig.cosd(target_bearing)
     predicted_target_bearing = trig.atan2d(e2 - e1, n2 - n1) % 360.0
-    self.hor_angle = curr_heading - predicted_target_bearing
-    self.surface_range = math.sqrt((e2 - e1)**2 + (n2 - n1)**2)
+    curr_heading = curr_position.heading
+    self.hor_angle = curr_heading - predicted_target_bearing + random.gauss(0, 3.0)
+    self.surface_range = math.sqrt((e2 - e1)**2 + (n2 - n1)**2) + random.gauss(0, 3.0)
 
   def measurement_prob(self, measurement):
     """Return how likely it is that this particle came from a measured target.
@@ -92,6 +95,23 @@ class Measurement(object):
   def __init__(self, surface_range, hor_angle):
     self.surface_range = surface_range
     self.hor_angle = hor_angle
+
+
+def get_first_feature_data(directory, data_format):
+  """Read first feature data file to initialize position
+  related functions.
+
+  Valid data_format values are 'proto' and 'json'.
+  """
+  if data_format == 'proto':
+    import proto.node_detection_pb2
+    import proto.util
+    return proto.util.read(os.path.join(directory, os.listdir(directory)[0]))
+  elif data_format == 'json':
+    return utils.Struct(json.loads(open(os.path.join(
+      directory, os.listdir(directory)[0])).read()))
+  else:
+    raise NotImplementedError("Unknown data format {}.".format(data_format))
 
 
 def get_feature_datas(directory, data_format):
@@ -136,12 +156,12 @@ def get_weights(particles, measurements):
   return weights
 
 
-def get_particle_positions(particles):
-  """Return the x and y coordinates of the particles as two parallel lists.
-  """
-  xs = [-p.surface_range * trig.sind(p.hor_angle) for p in particles]
-  ys = [p.surface_range * trig.cosd(p.hor_angle) for p in particles]
-  return xs, ys
+# def get_particle_positions(particles):
+#   """Return the x and y coordinates of the particles as two parallel lists.
+#   """
+#   xs = [-p.surface_range * trig.sind(p.hor_angle) for p in particles]
+#   ys = [p.surface_range * trig.cosd(p.hor_angle) for p in particles]
+#   return xs, ys
 
 
 def resample_particles(old_particles, weights):
@@ -201,12 +221,10 @@ def main(argv=None):
   # <data_format> is either 'proto' or 'json'.
   data_format = args.directory.split('-')[-1]
 
-  # Initialize our particles.
-  particles = []
-  for i in range(args.num_particles):
-    particles.append(Particle(args.fov_range, args.fov_hor_angle,
-                              args.gps_noise, args.compass_noise,
-                              args.range_resolution, args.angular_resolution))
+  feature_data = get_first_feature_data(args.directory, data_format)
+  init_position = SensorPosition(feature_data.position.lat,
+                                 feature_data.position.lon,
+                                 feature_data.heading.heading)
 
   # Initialize plot.
   # Notice (Nabin): We are plotting in interactive mode. So don't move mouse
@@ -219,6 +237,21 @@ def main(argv=None):
   if args.write_latlon:
     latlon_file = open("diver_position_estimates.txt", 'w')
 
+  # Accumulated x- and y-dispalcement of sensor (ship) in meters re starting
+  # position.
+  acc_dx, acc_dy = 0.0, 0.0
+
+  # Initialize our particles.
+  particles = []
+  for i in range(args.num_particles):
+    particles.append(Particle(args.fov_range, args.fov_hor_angle,
+                              args.gps_noise, args.compass_noise,
+                              args.range_resolution, args.angular_resolution))
+  particle_xs, particle_ys = utils.get_particle_positions(particles, acc_dx, acc_dy, init_position.heading)
+  utils.plot_data(particle_xs, particle_ys, [], [], [], -1,
+                  True, acc_dx, acc_dy, init_position.heading, particle_plot)
+  plt.draw()
+
   # Collection of filtered position computed from posterior particles.
   filtered_xs, filtered_ys = [], []
 
@@ -229,25 +262,30 @@ def main(argv=None):
     current_position = SensorPosition(feature_data.position.lat,
                                       feature_data.position.lon,
                                       feature_data.heading.heading)
+    dx, dy = 0.0, 0.0
     if last_position is not None:
+      dx, dy = utils.compute_sensor_movement(last_position, current_position)
       for particle in particles:
-        particle.move(last_position, current_position)
+        particle.move(last_position, current_position, dx, dy)
+    acc_dx += dx
+    acc_dy += dy
     measurements = get_measurements(feature_data)
     new_weights = get_weights(particles, measurements)
     if new_weights:
       weights = new_weights
     particles = resample_particles(particles, weights)
-    particle_xs, particle_ys = get_particle_positions(particles)
+    particle_xs, particle_ys = utils.get_particle_positions(particles, acc_dx, acc_dy, current_position.heading)
     filtered_x, filtered_y = utils.extract_position_from_particles(
       particle_xs, particle_ys)
     filtered_lat, filtered_lon = geo.add_offsets_to_latlons(
-      current_position, filtered_x, filtered_y)
+      current_position, filtered_x - acc_dx, filtered_y - acc_dy)
     filtered_xs.append(filtered_x)
     filtered_ys.append(filtered_y)
     last_position = current_position
 
     utils.plot_data(particle_xs, particle_ys, filtered_xs, filtered_ys,
-                    measurements, i, args.hide_measurements, particle_plot)
+                    measurements, i, args.hide_measurements, acc_dx, acc_dy,
+                    current_position.heading, particle_plot)
     plt.draw()
     if args.save_figure:
       plt.savefig("images//%03d.png" % i, format='png')
