@@ -1,5 +1,7 @@
+*.aux
+*.log
+*.out
 diver_position_estimates.txt
 diver_gps_locations.txt
 data/
 images/
-report/
